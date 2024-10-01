@@ -1,3 +1,5 @@
+
+
 # import time
 # import json
 # from src.utils.window_utils import get_active_window_title, is_idle
@@ -10,6 +12,9 @@
 #     "News", "Entertainment", "Work/Productivity", "Gaming", 
 #     "Video Streaming", "Health & Fitness", "Unknown"
 # ]
+
+
+
 # genai.configure(api_key="AIzaSyBAJ2p2QFtH3fWb8PufBGQvKfLD45uMaKs")
 
 # class ActivityTracker:
@@ -17,21 +22,54 @@
 #         self.usage_log = {}
 #         self.current_window = None
 #         self.start_time = None
-#         self.notify_threshold = 30 * 60  # 30 minutes threshold for notification (in seconds)
+#         self.notify_threshold = 30  # 30 minutes threshold for notification (in seconds)
 #         self.model = genai.GenerativeModel("gemini-1.5-flash")  # Instantiate the Gemini Model
 #         self.toaster = ToastNotifier()  # Initialize the notification toaster
+
+#     # Common applications to normalize
+#     COMMON_APPS = {
+#         "Visual Studio Code": ["Visual Studio Code", "VSCode", "Code", "vscode"],
+#         "Notepad": ["Notepad", "Notepad++"],
+#         "Microsoft Office": ["Word", "Excel", "PowerPoint", "Outlook"],
+#         "IDE": ["PyCharm", "IntelliJ IDEA", "Eclipse", "NetBeans"],
+#         "Slack": ["Slack"],
+#         "Zoom": ["Zoom"],
+#         "Discord": ["Discord"],
+#         "Spotify": ["Spotify", "Spotify Web"],
+#         "Postman": ["Postman"],
+#         "Telegram": ["Telegram"],
+#         "WhatsApp": ["WhatsApp"],
+#         "Minecraft": ["Minecraft"],
+#         "Visual Studio": ["Visual Studio"],
+#         "Game Clients": ["Steam", "Epic Games Launcher", "Origin"],
+#         # Add more applications as needed
+#     }
 
 #     def categorize_activity(self, window_title):
 #         # Check predefined categories first
 #         for key in CATEGORIES:
 #             if key.lower() in window_title.lower():
-#                 return key  # Fixing index to return the correct key
+#                 return key  # Return the found category
         
 #         # Use Gemini API to categorize if not found in predefined categories
 #         prompt = f"Classify the following activity based on the title: '{window_title}'. Only provide one word from these categories: {', '.join(CATEGORIES)}."
 #         response = self.model.generate_content(prompt)
 #         category = response.text.strip()
 #         return category if category else "Unknown"
+
+#     def normalize_window_title(self, window_title):
+#         """Normalize the window title based on common applications."""
+#         # Normalize Visual Studio Code titles regardless of the file being worked on
+#         if "Visual Studio Code" in window_title or "VSCode" in window_title:
+#             return "Visual Studio Code"  # Normalize to a single title for VSCode
+
+#         # Only normalize for recognized applications
+#         for app, keywords in self.COMMON_APPS.items():
+#             if any(keyword.lower() in window_title.lower() for keyword in keywords):
+#                 return app  # Return the common app name
+            
+#         return window_title  # Return original title for non-common apps
+
 
 #     def track(self):
 #         print("Tracking started... Press Ctrl+C to stop.")
@@ -40,7 +78,11 @@
 #                 if not is_idle():
 #                     active_window = get_active_window_title()
 #                     if active_window:
-#                         self.log_activity(active_window)
+#                         # Normalize window title only for common apps
+#                         normalized_window_title = self.normalize_window_title(active_window)
+
+#                         # Log the activity with the normalized title
+#                         self.log_activity(normalized_window_title)
 #                 time.sleep(5)  # Sleep for 5 seconds before checking again
 #         except KeyboardInterrupt:
 #             print("Tracking stopped.")
@@ -104,6 +146,8 @@
 #             json.dump(self.usage_log, f, indent=4)
 #         print("Usage log updated.")
 
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import time
 import json
 from src.utils.window_utils import get_active_window_title, is_idle
@@ -117,8 +161,6 @@ CATEGORIES = [
     "Video Streaming", "Health & Fitness", "Unknown"
 ]
 
-
-
 genai.configure(api_key="AIzaSyBAJ2p2QFtH3fWb8PufBGQvKfLD45uMaKs")
 
 class ActivityTracker:
@@ -126,28 +168,91 @@ class ActivityTracker:
         self.usage_log = {}
         self.current_window = None
         self.start_time = None
-        self.notify_threshold = 30  # 30 minutes threshold for notification (in seconds)
+        self.notify_threshold = 30 * 60  # 30 minutes threshold for notification (in seconds)
         self.model = genai.GenerativeModel("gemini-1.5-flash")  # Instantiate the Gemini Model
         self.toaster = ToastNotifier()  # Initialize the notification toaster
+        self.category_time = {category: 0 for category in CATEGORIES}  # Initialize category time tracking
 
     # Common applications to normalize
     COMMON_APPS = {
-        "Visual Studio Code": ["Visual Studio Code", "VSCode", "Code", "vscode"],
-        "Notepad": ["Notepad", "Notepad++"],
-        "Microsoft Office": ["Word", "Excel", "PowerPoint", "Outlook"],
-        "IDE": ["PyCharm", "IntelliJ IDEA", "Eclipse", "NetBeans"],
-        "Slack": ["Slack"],
-        "Zoom": ["Zoom"],
-        "Discord": ["Discord"],
-        "Spotify": ["Spotify", "Spotify Web"],
-        "Postman": ["Postman"],
-        "Telegram": ["Telegram"],
-        "WhatsApp": ["WhatsApp"],
-        "Minecraft": ["Minecraft"],
-        "Visual Studio": ["Visual Studio"],
-        "Game Clients": ["Steam", "Epic Games Launcher", "Origin"],
-        # Add more applications as needed
-    }
+    # Development Tools
+    "Visual Studio Code": ["Visual Studio Code", "VSCode", "Code", "vscode"],
+    "Notepad": ["Notepad", "Notepad++"],
+    "Microsoft Office": ["Word", "Excel", "PowerPoint", "Outlook"],
+    "IDE": ["PyCharm", "IntelliJ IDEA", "Eclipse", "NetBeans", "Xcode", "Android Studio"],
+    "Visual Studio": ["Visual Studio"],
+    
+    # Communication Tools
+    "Slack": ["Slack"],
+    "Zoom": ["Zoom"],
+    "Discord": ["Discord"],
+    "Telegram": ["Telegram"],
+    "WhatsApp": ["WhatsApp"],
+    "Google Meet": ["Google Meet", "Meet"],
+    "Microsoft Teams": ["Microsoft Teams", "Teams"],
+    "Skype": ["Skype"],
+    "Gmail": ["Gmail"],
+
+    
+    # Entertainment & Media
+    "Spotify": ["Spotify", "Spotify Web"],
+    "Netflix": ["Netflix"],
+    "Twitch": ["Twitch"],
+    "Amazon Prime Video": ["Amazon Prime Video", "Prime Video"],
+    "Disney+": ["Disney+", "Disney Plus"],
+    "Hulu": ["Hulu"],
+    
+    # Shopping
+    "Amazon": ["Amazon", "amazon.in", "amazon.com", "Amazon.in", "Amazon.com"],
+    "Flipkart": ["Flipkart", "Flipkart.com"],
+    "eBay": ["eBay", "eBay.com"],
+    
+    # Social Media
+    "Facebook": ["Facebook"],
+    "Twitter": ["Twitter", "X"],
+    "Instagram": ["Instagram"],
+    "LinkedIn": ["LinkedIn"],
+    "Reddit": ["Reddit"],
+    "Snapchat": ["Snapchat"],
+    
+    # Game Clients
+    "Game Clients": ["Steam", "Epic Games Launcher", "Origin", "Battle.net", "GOG Galaxy", "Uplay"],
+    "Minecraft": ["Minecraft"],
+    "Roblox": ["Roblox"],
+    "Valorant": ["Valorant"],
+    "League of Legends": ["League of Legends", "LoL"],
+    "Fortnite": ["Fortnite"],
+    
+    # Cloud Storage
+    "Google Drive": ["Google Drive", "Drive"],
+    "Dropbox": ["Dropbox"],
+    "OneDrive": ["OneDrive"],
+    "iCloud": ["iCloud"],
+    
+    # Utilities & Tools
+    "Postman": ["Postman"],
+    "Adobe Acrobat": ["Adobe Acrobat", "Acrobat Reader"],
+    "Photoshop": ["Photoshop", "Adobe Photoshop"],
+    "FileZilla": ["FileZilla"],
+    "7-Zip": ["7-Zip"],
+    "WinRAR": ["WinRAR"],
+    
+    # Productivity Tools
+    "Trello": ["Trello"],
+    "Asana": ["Asana"],
+    "Notion": ["Notion"],
+    "Jira": ["Jira"],
+    "Todoist": ["Todoist"],
+    "Evernote": ["Evernote"],
+    
+    # Virtual Machines & Development Tools
+    "VirtualBox": ["VirtualBox"],
+    "VMware": ["VMware"],
+    "Docker": ["Docker"],
+    
+    
+}
+
 
     def categorize_activity(self, window_title):
         # Check predefined categories first
@@ -173,7 +278,6 @@ class ActivityTracker:
                 return app  # Return the common app name
             
         return window_title  # Return original title for non-common apps
-
 
     def track(self):
         print("Tracking started... Press Ctrl+C to stop.")
@@ -201,6 +305,11 @@ class ActivityTracker:
                 # Save time spent on the previous window
                 elapsed_time = time.time() - self.start_time
                 self.usage_log[self.current_window]["time_spent"] += elapsed_time
+
+                # Update category time spent
+                current_category = self.usage_log[self.current_window]["category"]
+                if current_category in self.category_time:
+                    self.category_time[current_category] += elapsed_time
 
             # Switch to the new window
             self.current_window = window_title
@@ -245,8 +354,19 @@ class ActivityTracker:
         if self.current_window:
             elapsed_time = time.time() - self.start_time
             self.usage_log[self.current_window]["time_spent"] += elapsed_time
+            
+            # Update category time tracking
+            current_category = self.usage_log[self.current_window]["category"]
+            if current_category in self.category_time:
+                self.category_time[current_category] += elapsed_time
         
         with open("usage_log.json", "w") as f:
             json.dump(self.usage_log, f, indent=4)
+        
+        # Save total category time to a separate file (optional)
+        with open("category_time.json", "w") as f:
+            json.dump(self.category_time, f, indent=4)
+
         print("Usage log updated.")
+
 
