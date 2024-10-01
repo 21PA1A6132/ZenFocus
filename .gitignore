@@ -4,5 +4,3 @@ logs/
 *.log
 package-lock.json
 package.json
-*.etc
-Include
