@@ -1,3 +1,4 @@
+// index.js
 const { ipcRenderer } = require("electron");
 
 async function displayUsageData() {
@@ -32,12 +33,26 @@ async function displayUsageData() {
 // Call displayUsageData initially and every 5 seconds (5000ms) to refresh the data
 window.onload = () => {
   displayUsageData();
-  setInterval(displayUsageData, 1000); // Refresh every 5 seconds
+  setInterval(displayUsageData, 5000); // Refresh every 5 seconds
 
-  // Add event listener for testing the notification
-  const testNotificationBtn = document.getElementById('testNotificationBtn');
-  testNotificationBtn.addEventListener('click', () => {
-    // Call the method to show the break reminder notification
+  // Add event listener for testing the break reminder notification
+  const testBreakNotificationBtn = document.getElementById('testBreakNotificationBtn');
+  testBreakNotificationBtn.addEventListener('click', () => {
     window.electronAPI.showBreakNotification();
   });
+
+  // Add event listener for testing the stress relief activity notification
+  const testStressReliefBtn = document.getElementById('testStressReliefBtn');
+  testStressReliefBtn.addEventListener('click', () => {
+    window.electronAPI.showStressReliefNotification();
+  });
 };
+
+document.getElementById("playMusicBtn").addEventListener("click", () => {
+  window.electronAPI.playMusic();  // Send event to main to play music
+});
+
+document.getElementById("openGameBtn").addEventListener("click", () => {
+  window.electronAPI.openGame();  // Send event to main to open game
+});
+
